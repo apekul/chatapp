@@ -1,5 +1,6 @@
+import Register from "./Components/Register";
 function App() {
-  return <div className="">Chat</div>;
+  return <Register />;
 }
 
 export default App;
