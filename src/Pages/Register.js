@@ -1,13 +1,61 @@
 import React from "react";
 import { BsArrowRightShort } from "react-icons/bs";
 import { BiImageAdd } from "react-icons/bi";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { auth, storage, db } from "../firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { doc, setDoc } from "firebase/firestore";
+import { useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [image, setImage] = React.useState(null);
 
+  const navigate = useNavigate();
+
   const onImageChange = (event) => {
     if (event.target.files && event.target.files[0]) {
       setImage(URL.createObjectURL(event.target.files[0]));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const displayName = e.target[0].value;
+    const email = e.target[1].value;
+    const password = e.target[2].value;
+    const file = e.target[3].files[0];
+
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email, password);
+
+      const storageRef = ref(storage, displayName);
+
+      await uploadBytesResumable(storageRef, file).then(() => {
+        getDownloadURL(storageRef).then(async (downloadURL) => {
+          try {
+            //Update profile
+            await updateProfile(res.user, {
+              displayName,
+              photoURL: downloadURL,
+            });
+            //create user on firestore
+            await setDoc(doc(db, "users", res.user.uid), {
+              uid: res.user.uid,
+              displayName,
+              email,
+              photoURL: downloadURL,
+            });
+
+            //create empty user chats on firestore
+            await setDoc(doc(db, "userChats", res.user.uid), {});
+            navigate("/");
+          } catch (err) {
+            console.log(err);
+          }
+        });
+      });
+    } catch (err) {
+      console.log("catch error", err);
     }
   };
 
@@ -17,7 +65,7 @@ const Register = () => {
         <h2 className="text-2xl font-bold text-center pb-5 text-slate-700">
           Register
         </h2>
-        <form className="flex flex-col gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <input
             type="text"
             placeholder="display name"
@@ -55,7 +103,7 @@ const Register = () => {
             <span>Add avatar</span>
           </label>
           <button
-            onClick={() => console.log("register")}
+            type="submit"
             className="py-2 my-1 rounded text-white bg-blue-400 hover:bg-blue-500"
           >
             Sign in
