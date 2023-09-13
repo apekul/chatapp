@@ -1,14 +1,32 @@
 import React from "react";
 import { BsArrowRightShort } from "react-icons/bs";
+import { useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 const Login = () => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const email = e.target[0].value;
+    const password = e.target[1].value;
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/");
+    } catch (err) {
+      console.log("catch login error", err);
+    }
+  };
+
   return (
     <section className="w-full h-screen flex items-center justify-center bg-gray-100 ">
       <div className="bg-gray-300 w-96 rounded px-10 py-5">
         <h2 className="text-2xl font-bold text-center pb-5 text-slate-700">
           Sign in
         </h2>
-        <form className="flex flex-col gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           <input
             type="email"
             placeholder="email"
@@ -21,7 +39,7 @@ const Login = () => {
           />
 
           <button
-            onClick={() => console.log("register")}
+            type="submit"
             className="py-2 my-1 rounded text-white bg-blue-400 hover:bg-blue-500"
           >
             Sign in

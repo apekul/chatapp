@@ -55,7 +55,7 @@ const Register = () => {
         });
       });
     } catch (err) {
-      console.log("catch error", err);
+      console.log("catch register error", err);
     }
   };
 
