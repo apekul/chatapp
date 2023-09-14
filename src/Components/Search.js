@@ -1,18 +1,23 @@
-import React, { useState } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import React, { useState, useContext } from "react";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  getDoc,
+  doc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "../firebase";
-
-const fakeUsers = [
-  { user: "user1", id: 1 },
-  { user: "user2", id: 2 },
-  { user: "user3", id: 3 },
-  { user: "user4", id: 4 },
-  { user: "user5", id: 5 },
-];
+import { AuthContext } from "../Context";
 
 const Search = () => {
-  const [username, setUsername] = useState();
+  const [username, setUsername] = useState("");
   const [user, setUser] = useState(null);
+
+  const { currentUser } = useContext(AuthContext);
 
   const handleSearch = async () => {
     const q = query(
@@ -33,25 +38,62 @@ const Search = () => {
     event.code === "Enter" && handleSearch();
   };
 
+  const handleSelect = async () => {
+    const mergedID =
+      currentUser.uid > user.uid
+        ? currentUser.uid + user.uid
+        : user.uid + currentUser.uid;
+
+    try {
+      const res = await getDoc(doc(db, "chats", mergedID));
+      if (!res.exists()) {
+        // create chat in chats collection
+        await setDoc(doc, (db, "chats", mergedID), { messages: [] });
+
+        // create user chats
+        await updateDoc(doc(db, "userChats", currentUser.uid), {
+          [mergedID + ".userInfo"]: {
+            uid: user.uid,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+          },
+          [mergedID + ".date"]: serverTimestamp(),
+        });
+
+        await updateDoc(doc(db, "userChats", user.uid), {
+          [mergedID + ".userInfo"]: {
+            uid: currentUser.uid,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL,
+          },
+          [mergedID + ".date"]: serverTimestamp(),
+        });
+      }
+    } catch (err) {
+      console.log("select error", err);
+    }
+    setUser(null);
+    setUsername("");
+  };
+
   return (
-    <div
-      className="w-full h-full px-2 text-white py-2 text-sm"
-      style={{ height: "calc(100% - 70px)" }}
-    >
+    <div className="w-full px-2 text-white py-2 text-sm">
       <input
+        type="text"
         placeholder="Find user"
-        className="w-full px-2 py-1 mb-2 focus:outline-none text-black"
+        value={username}
+        className="w-full px-2 py-1 focus:outline-none text-black"
         onChange={(e) => setUsername(e.target.value)}
         onKeyDown={handleKey}
       />
-      <div
-        className="overflow-y-auto px-1"
-        style={{ height: "calc(100% - 20px)" }}
-      >
+      <div className="overflow-y-auto px-1">
         {/* On condition if user is find */}
         {user && (
           <>
-            <div className="flex items-center py-2 gap-2 my-2 cursor-pointer hover:bg-zinc-500 px-2 mr-2 rounded">
+            <div
+              className="flex items-center py-2 gap-2 my-2 cursor-pointer hover:bg-zinc-500 px-2 rounded"
+              onClick={handleSelect}
+            >
               <img
                 src={user.photoURL}
                 alt="avatar"
@@ -62,26 +104,6 @@ const Search = () => {
             <div className="w-full border-b-2 border-white"></div>
           </>
         )}
-        {/*  */}
-        <div className="flex flex-col gap-1 py-2">
-          Active Chats
-          {fakeUsers.map((user, i) => (
-            <div
-              key={i}
-              className="flex items-center py-2 gap-2 cursor-pointer hover:bg-zinc-500 px-2 mr-2 rounded"
-            >
-              <img
-                src="https://i.ytimg.com/vi/9L0HzzrE-ck/hqdefault.jpg"
-                alt="avatar"
-                className="xl:w-20 xl:h-20 h-10 w-10 object-cover rounded-full"
-              />
-              <div className="flex flex-col">
-                <p>{user.user}</p>
-                <p>Last message</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
