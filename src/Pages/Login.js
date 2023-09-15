@@ -19,6 +19,9 @@ const Login = () => {
       console.log("catch login error", err);
     }
   };
+  const onKeyDown = (e) => {
+    e.code === "Enter" && handleSubmit();
+  };
 
   return (
     <section className="w-full h-screen flex items-center justify-center bg-gray-100 ">
@@ -36,6 +39,7 @@ const Login = () => {
             type="password"
             placeholder="password"
             className="py-2 px-3 rounded"
+            onKeyDown={onKeyDown}
           />
 
           <button

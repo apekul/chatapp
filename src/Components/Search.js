@@ -11,7 +11,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
-import { AuthContext } from "../Context";
+import { AuthContext } from "../Context/Context";
 
 const Search = () => {
   const [username, setUsername] = useState("");
@@ -39,34 +39,35 @@ const Search = () => {
   };
 
   const handleSelect = async () => {
-    const mergedID =
+    //check whether the group(chats in firestore) exists, if not create
+    const combinedId =
       currentUser.uid > user.uid
         ? currentUser.uid + user.uid
         : user.uid + currentUser.uid;
-
     try {
-      const res = await getDoc(doc(db, "chats", mergedID));
-      if (!res.exists()) {
-        // create chat in chats collection
-        await setDoc(doc, (db, "chats", mergedID), { messages: [] });
+      const res = await getDoc(doc(db, "chats", combinedId));
 
-        // create user chats
+      if (!res.exists()) {
+        //create a chat in chats collection
+        await setDoc(doc(db, "chats", combinedId), { messages: [] });
+
+        //create user chats
         await updateDoc(doc(db, "userChats", currentUser.uid), {
-          [mergedID + ".userInfo"]: {
+          [combinedId + ".userInfo"]: {
             uid: user.uid,
             displayName: user.displayName,
             photoURL: user.photoURL,
           },
-          [mergedID + ".date"]: serverTimestamp(),
+          [combinedId + ".date"]: serverTimestamp(),
         });
 
         await updateDoc(doc(db, "userChats", user.uid), {
-          [mergedID + ".userInfo"]: {
+          [combinedId + ".userInfo"]: {
             uid: currentUser.uid,
             displayName: currentUser.displayName,
             photoURL: currentUser.photoURL,
           },
-          [mergedID + ".date"]: serverTimestamp(),
+          [combinedId + ".date"]: serverTimestamp(),
         });
       }
     } catch (err) {

@@ -8,7 +8,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import { AuthContext } from "./Context";
+import { AuthContext } from "./Context/Context";
 
 function App() {
   const { currentUser } = useContext(AuthContext);

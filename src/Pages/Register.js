@@ -95,7 +95,7 @@ const Register = () => {
               <img
                 src={image}
                 alt="avatar"
-                className="w-16 h-16 object-cover object-top"
+                className="w-16 h-16 object-cover object-top rounded-full"
               />
             ) : (
               <BiImageAdd className="text-4xl w-16 h-16" />
